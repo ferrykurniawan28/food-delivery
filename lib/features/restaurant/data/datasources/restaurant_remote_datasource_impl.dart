@@ -1,0 +1,1307 @@
+import '../datasources/restaurant_remote_datasource.dart';
+import '../models/restaurant_model.dart';
+import '../models/menu_category_model.dart';
+import '../models/menu_item_model.dart';
+import '../models/operating_hours_model.dart';
+import '../models/restaurant_contact_model.dart';
+import '../models/restaurant_location_model.dart';
+
+/// Mock implementation of RestaurantRemoteDataSource
+/// In a real app, this would make HTTP requests to your backend API
+class RestaurantRemoteDataSourceImpl implements RestaurantRemoteDataSource {
+  // Simulated network delay
+  Future<void> _simulateNetworkDelay() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
+  Future<List<RestaurantModel>> getRestaurants() async {
+    await _simulateNetworkDelay();
+    return _mockRestaurants;
+  }
+
+  @override
+  Future<List<RestaurantModel>> getRestaurantsByCategory(
+    String category,
+  ) async {
+    await _simulateNetworkDelay();
+
+    if (category.toLowerCase() == 'popular') {
+      // Return restaurants with high ratings for popular category
+      return _mockRestaurants.where((r) => r.rating >= 4.5).toList();
+    }
+
+    return _mockRestaurants.where((restaurant) {
+      return restaurant.cuisineTypes.any(
+        (cuisine) => cuisine.toLowerCase().contains(category.toLowerCase()),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<RestaurantModel>> searchRestaurants(String query) async {
+    await _simulateNetworkDelay();
+
+    final lowerQuery = query.toLowerCase();
+    return _mockRestaurants.where((restaurant) {
+      return restaurant.name.toLowerCase().contains(lowerQuery) ||
+          restaurant.description.toLowerCase().contains(lowerQuery) ||
+          restaurant.cuisineTypes.any(
+            (cuisine) => cuisine.toLowerCase().contains(lowerQuery),
+          );
+    }).toList();
+  }
+
+  @override
+  Future<RestaurantModel?> getRestaurantById(String id) async {
+    await _simulateNetworkDelay();
+
+    try {
+      return _mockRestaurants.firstWhere((restaurant) => restaurant.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<RestaurantModel>> getRestaurantsNearby({
+    required double latitude,
+    required double longitude,
+    double radiusInKm = 5.0,
+  }) async {
+    await _simulateNetworkDelay();
+
+    // In a real implementation, you would filter by actual distance
+    // For mock data, return restaurants within the distance range
+    return _mockRestaurants
+        .where((restaurant) => restaurant.distance <= radiusInKm)
+        .toList();
+  }
+
+  @override
+  Future<List<RestaurantModel>> getRestaurantsWithFilters({
+    String? category,
+    double? minRating,
+    String? priceRange,
+    bool? isOpen,
+    int? maxDeliveryTime,
+  }) async {
+    await _simulateNetworkDelay();
+
+    var filteredRestaurants = _mockRestaurants.where((restaurant) {
+      // Filter by category
+      if (category != null && category.isNotEmpty) {
+        final hasCategory = restaurant.cuisineTypes.any(
+          (cuisine) => cuisine.toLowerCase().contains(category.toLowerCase()),
+        );
+        if (!hasCategory) return false;
+      }
+
+      // Filter by minimum rating
+      if (minRating != null && restaurant.rating < minRating) {
+        return false;
+      }
+
+      // Filter by price range
+      if (priceRange != null && restaurant.priceRange != priceRange) {
+        return false;
+      }
+
+      // Filter by open status
+      if (isOpen != null && restaurant.isOpen != isOpen) {
+        return false;
+      }
+
+      // Filter by maximum delivery time
+      if (maxDeliveryTime != null &&
+          restaurant.deliveryTime > maxDeliveryTime) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    return filteredRestaurants;
+  }
+
+  // Mock data for testing
+  static final List<RestaurantModel> _mockRestaurants = [
+    RestaurantModel(
+      id: '1',
+      name: 'Mario\'s Pizza Palace',
+      description: 'Authentic Italian pizza made with fresh ingredients',
+      imageUrl: 'assets/images/pizza-1.webp',
+      cuisineTypes: ['Italian', 'Pizza'],
+      rating: 4.8,
+      reviewCount: 328,
+      priceRange: '\$\$',
+      deliveryTime: 25,
+      distance: 1.2,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.99,
+      minimumOrder: 15.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '1',
+          name: 'Pizza',
+          description: 'Our signature pizzas',
+          imageUrl: 'assets/images/pizza.webp',
+          items: [
+            MenuItemModel(
+              id: '1',
+              name: 'Margherita Pizza',
+              description:
+                  'Classic pizza with tomato sauce, mozzarella, and basil',
+              price: 14.99,
+              imageUrl: 'assets/images/pizza-1.webp',
+              category: 'Pizza',
+              ingredients: ['Tomato sauce', 'Mozzarella', 'Basil'],
+              isVegetarian: true,
+              isVegan: false,
+              calories: 280,
+              preparationTime: 15,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '22:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '123 Pizza Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12345',
+        country: 'USA',
+        latitude: 40.7128,
+        longitude: -74.0060,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0123',
+        email: 'info@mariospizza.com',
+        website: 'https://mariospizza.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'PayPal'],
+      deliveryAreas: ['Downtown', 'Midtown'],
+    ),
+    RestaurantModel(
+      id: '2',
+      name: 'Burger Barn',
+      description: 'Gourmet burgers made with premium beef',
+      imageUrl: 'assets/images/burger-1.webp',
+      cuisineTypes: ['American', 'Burger'],
+      rating: 4.6,
+      reviewCount: 256,
+      priceRange: '\$\$',
+      deliveryTime: 20,
+      distance: 0.8,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 1.99,
+      minimumOrder: 12.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '2',
+          name: 'Burgers',
+          description: 'Our premium burgers',
+          imageUrl: 'assets/images/burger.webp',
+          items: [
+            MenuItemModel(
+              id: '2',
+              name: 'Classic Cheeseburger',
+              description:
+                  'Beef patty with cheese, lettuce, tomato, and special sauce',
+              price: 12.99,
+              imageUrl: 'assets/images/burger-1.webp',
+              category: 'Burgers',
+              ingredients: [
+                'Beef patty',
+                'Cheese',
+                'Lettuce',
+                'Tomato',
+                'Special sauce',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 520,
+              preparationTime: 12,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '10:00',
+          closeTime: '23:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '456 Burger Avenue',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12346',
+        country: 'USA',
+        latitude: 40.7589,
+        longitude: -73.9851,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0124',
+        email: 'info@burgerbarn.com',
+        website: 'https://burgerbarn.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Apple Pay'],
+      deliveryAreas: ['Downtown', 'Uptown'],
+    ),
+    RestaurantModel(
+      id: '3',
+      name: 'Clucky\'s Chicken',
+      description: 'Crispy fried chicken and sides',
+      imageUrl: 'assets/images/chicken-1.webp',
+      cuisineTypes: ['American', 'Chicken'],
+      rating: 4.4,
+      reviewCount: 189,
+      priceRange: '\$',
+      deliveryTime: 18,
+      distance: 2.1,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.49,
+      minimumOrder: 10.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '3',
+          name: 'Chicken',
+          description: 'Our crispy chicken specialties',
+          imageUrl: 'assets/images/chicken.webp',
+          items: [
+            MenuItemModel(
+              id: '3',
+              name: 'Fried Chicken Bucket',
+              description: '8 pieces of crispy fried chicken',
+              price: 18.99,
+              imageUrl: 'assets/images/chicken-1.webp',
+              category: 'Chicken',
+              ingredients: ['Chicken', 'Seasoning', 'Flour coating'],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 320,
+              preparationTime: 20,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '21:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '789 Chicken Lane',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12347',
+        country: 'USA',
+        latitude: 40.7831,
+        longitude: -73.9712,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0125',
+        email: 'info@cluckys.com',
+        website: 'https://cluckys.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card'],
+      deliveryAreas: ['Downtown', 'Eastside'],
+    ),
+    RestaurantModel(
+      id: '4',
+      name: 'Taco Fiesta',
+      description: 'Authentic Mexican tacos and burritos',
+      imageUrl: 'assets/images/taco-1.webp',
+      cuisineTypes: ['Mexican', 'Tacos'],
+      rating: 4.7,
+      reviewCount: 412,
+      priceRange: '\$',
+      deliveryTime: 15,
+      distance: 1.5,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 1.49,
+      minimumOrder: 8.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '4',
+          name: 'Tacos',
+          description: 'Fresh Mexican tacos',
+          imageUrl: 'assets/images/tacos.webp',
+          items: [
+            MenuItemModel(
+              id: '4',
+              name: 'Carnitas Tacos',
+              description:
+                  'Slow-cooked pork with onions and cilantro (3 tacos)',
+              price: 9.99,
+              imageUrl: 'assets/images/taco-1.webp',
+              category: 'Tacos',
+              ingredients: [
+                'Pork carnitas',
+                'Onions',
+                'Cilantro',
+                'Corn tortillas',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 240,
+              preparationTime: 8,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '22:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '321 Taco Boulevard',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12348',
+        country: 'USA',
+        latitude: 40.7505,
+        longitude: -73.9934,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0126',
+        email: 'info@tacofiesta.com',
+        website: 'https://tacofiesta.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Venmo'],
+      deliveryAreas: ['Downtown', 'Westside'],
+    ),
+    RestaurantModel(
+      id: '5',
+      name: 'Sweet Treats Desserts',
+      description: 'Delicious desserts and sweet treats',
+      imageUrl: 'assets/images/dessert-1.webp',
+      cuisineTypes: ['Dessert', 'Bakery'],
+      rating: 4.9,
+      reviewCount: 156,
+      priceRange: '\$\$',
+      deliveryTime: 12,
+      distance: 0.7,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.99,
+      minimumOrder: 15.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '5',
+          name: 'Desserts',
+          description: 'Our sweet specialties',
+          imageUrl: 'assets/images/dessert.webp',
+          items: [
+            MenuItemModel(
+              id: '5',
+              name: 'Chocolate Cake Slice',
+              description: 'Rich chocolate cake with chocolate frosting',
+              price: 6.99,
+              imageUrl: 'assets/images/dessert-1.webp',
+              category: 'Desserts',
+              ingredients: ['Chocolate cake', 'Chocolate frosting', 'Sugar'],
+              isVegetarian: true,
+              isVegan: false,
+              calories: 380,
+              preparationTime: 5,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '12:00',
+          closeTime: '20:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '654 Sweet Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12349',
+        country: 'USA',
+        latitude: 40.7282,
+        longitude: -74.0776,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0127',
+        email: 'info@sweettreats.com',
+        website: 'https://sweettreats.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'PayPal'],
+      deliveryAreas: ['Downtown', 'Midtown', 'Uptown'],
+    ),
+    RestaurantModel(
+      id: '6',
+      name: 'Satay Sensation',
+      description: 'Authentic Indonesian satay and grilled specialties',
+      imageUrl: 'assets/images/satay-1.webp',
+      cuisineTypes: ['Indonesian', 'Asian', 'Grilled'],
+      rating: 4.5,
+      reviewCount: 234,
+      priceRange: '\$\$',
+      deliveryTime: 22,
+      distance: 1.8,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.49,
+      minimumOrder: 12.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '6',
+          name: 'Satay',
+          description: 'Grilled skewered meats with peanut sauce',
+          imageUrl: 'assets/images/satay.webp',
+          items: [
+            MenuItemModel(
+              id: '6',
+              name: 'Chicken Satay',
+              description:
+                  'Grilled chicken skewers with peanut sauce (6 skewers)',
+              price: 13.99,
+              imageUrl: 'assets/images/satay-1.webp',
+              category: 'Satay',
+              ingredients: [
+                'Chicken',
+                'Peanut sauce',
+                'Bamboo skewers',
+                'Spices',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 290,
+              preparationTime: 18,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '12:00',
+          closeTime: '22:30',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '987 Satay Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12350',
+        country: 'USA',
+        latitude: 40.7408,
+        longitude: -73.9896,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0128',
+        email: 'info@sataysensation.com',
+        website: 'https://sataysensation.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Apple Pay'],
+      deliveryAreas: ['Downtown', 'Eastside', 'Midtown'],
+    ),
+    RestaurantModel(
+      id: '7',
+      name: 'Bella\'s Pizza Corner',
+      description: 'Traditional Neapolitan pizza with wood-fired oven',
+      imageUrl: 'assets/images/pizza-2.webp',
+      cuisineTypes: ['Italian', 'Pizza'],
+      rating: 4.7,
+      reviewCount: 389,
+      priceRange: '\$\$\$',
+      deliveryTime: 28,
+      distance: 2.3,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 3.49,
+      minimumOrder: 18.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '7',
+          name: 'Neapolitan Pizza',
+          description: 'Wood-fired authentic Italian pizzas',
+          imageUrl: 'assets/images/pizza.webp',
+          items: [
+            MenuItemModel(
+              id: '7',
+              name: 'Quattro Formaggi Pizza',
+              description:
+                  'Four cheese pizza with mozzarella, gorgonzola, parmesan, and ricotta',
+              price: 19.99,
+              imageUrl: 'assets/images/pizza-2.webp',
+              category: 'Pizza',
+              ingredients: [
+                'Mozzarella',
+                'Gorgonzola',
+                'Parmesan',
+                'Ricotta',
+                'Tomato base',
+              ],
+              isVegetarian: true,
+              isVegan: false,
+              calories: 420,
+              preparationTime: 22,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '16:00',
+          closeTime: '23:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '159 Italian Way',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12351',
+        country: 'USA',
+        latitude: 40.7614,
+        longitude: -73.9776,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0129',
+        email: 'info@bellaspizza.com',
+        website: 'https://bellaspizza.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'PayPal', 'Apple Pay'],
+      deliveryAreas: ['Downtown', 'Uptown', 'Westside'],
+    ),
+    RestaurantModel(
+      id: '8',
+      name: 'Burger House Premium',
+      description: 'Gourmet burgers with artisanal ingredients',
+      imageUrl: 'assets/images/burger-2.webp',
+      cuisineTypes: ['American', 'Burger', 'Gourmet'],
+      rating: 4.6,
+      reviewCount: 298,
+      priceRange: '\$\$\$',
+      deliveryTime: 25,
+      distance: 3.1,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 3.99,
+      minimumOrder: 20.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '8',
+          name: 'Premium Burgers',
+          description: 'Artisanal burgers with premium ingredients',
+          imageUrl: 'assets/images/burger.webp',
+          items: [
+            MenuItemModel(
+              id: '8',
+              name: 'Truffle Mushroom Burger',
+              description:
+                  'Wagyu beef patty with truffle mushrooms and swiss cheese',
+              price: 24.99,
+              imageUrl: 'assets/images/burger-2.webp',
+              category: 'Burgers',
+              ingredients: [
+                'Wagyu beef',
+                'Truffle mushrooms',
+                'Swiss cheese',
+                'Brioche bun',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 680,
+              preparationTime: 20,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:30',
+          closeTime: '22:30',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '753 Gourmet Avenue',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12352',
+        country: 'USA',
+        latitude: 40.7789,
+        longitude: -73.9634,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0130',
+        email: 'info@burgerhousepremium.com',
+        website: 'https://burgerhousepremium.com',
+      ),
+      paymentMethods: ['Credit Card', 'Apple Pay', 'Google Pay'],
+      deliveryAreas: ['Uptown', 'Midtown'],
+    ),
+    RestaurantModel(
+      id: '9',
+      name: 'Golden Wing Chicken',
+      description: 'Korean-style fried chicken with various flavors',
+      imageUrl: 'assets/images/chicken-2.webp',
+      cuisineTypes: ['Korean', 'Chicken', 'Asian'],
+      rating: 4.8,
+      reviewCount: 445,
+      priceRange: '\$\$',
+      deliveryTime: 20,
+      distance: 1.6,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.99,
+      minimumOrder: 14.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '9',
+          name: 'Korean Fried Chicken',
+          description: 'Crispy Korean-style chicken with various sauces',
+          imageUrl: 'assets/images/chicken.webp',
+          items: [
+            MenuItemModel(
+              id: '9',
+              name: 'Soy Garlic Wings',
+              description:
+                  'Crispy wings glazed with soy garlic sauce (10 wings)',
+              price: 16.99,
+              imageUrl: 'assets/images/chicken-2.webp',
+              category: 'Chicken',
+              ingredients: [
+                'Chicken wings',
+                'Soy sauce',
+                'Garlic',
+                'Korean spices',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 380,
+              preparationTime: 18,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '15:00',
+          closeTime: '01:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '852 Korean Plaza',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12353',
+        country: 'USA',
+        latitude: 40.7456,
+        longitude: -73.9889,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0131',
+        email: 'info@goldenwing.com',
+        website: 'https://goldenwing.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Apple Pay', 'Samsung Pay'],
+      deliveryAreas: ['Downtown', 'Eastside', 'Koreatown'],
+    ),
+    RestaurantModel(
+      id: '10',
+      name: 'El Mariachi Cantina',
+      description: 'Authentic Mexican cuisine with live mariachi music',
+      imageUrl: 'assets/images/taco-2.webp',
+      cuisineTypes: ['Mexican', 'Tacos', 'Traditional'],
+      rating: 4.5,
+      reviewCount: 367,
+      priceRange: '\$\$',
+      deliveryTime: 19,
+      distance: 2.7,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.49,
+      minimumOrder: 16.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '10',
+          name: 'Mexican Specialties',
+          description: 'Traditional Mexican dishes',
+          imageUrl: 'assets/images/tacos.webp',
+          items: [
+            MenuItemModel(
+              id: '10',
+              name: 'Fish Tacos',
+              description:
+                  'Grilled fish with cabbage slaw and chipotle mayo (3 tacos)',
+              price: 14.99,
+              imageUrl: 'assets/images/taco-2.webp',
+              category: 'Tacos',
+              ingredients: [
+                'Grilled fish',
+                'Cabbage slaw',
+                'Chipotle mayo',
+                'Corn tortillas',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 320,
+              preparationTime: 15,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '23:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '468 Mariachi Boulevard',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12354',
+        country: 'USA',
+        latitude: 40.7623,
+        longitude: -73.9745,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0132',
+        email: 'info@elmariachi.com',
+        website: 'https://elmariachi.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Venmo'],
+      deliveryAreas: ['Downtown', 'Westside', 'Little Mexico'],
+    ),
+    RestaurantModel(
+      id: '11',
+      name: 'Spice Route Satay',
+      description: 'Malaysian and Thai satay with authentic spices',
+      imageUrl: 'assets/images/satay-2.webp',
+      cuisineTypes: ['Malaysian', 'Thai', 'Asian'],
+      rating: 4.6,
+      reviewCount: 178,
+      priceRange: '\$\$',
+      deliveryTime: 24,
+      distance: 2.9,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.99,
+      minimumOrder: 13.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '11',
+          name: 'Satay Specialties',
+          description: 'Malaysian and Thai style satay',
+          imageUrl: 'assets/images/satay.webp',
+          items: [
+            MenuItemModel(
+              id: '11',
+              name: 'Beef Satay',
+              description:
+                  'Marinated beef skewers with spicy peanut sauce (8 skewers)',
+              price: 17.99,
+              imageUrl: 'assets/images/satay-2.webp',
+              category: 'Satay',
+              ingredients: [
+                'Beef',
+                'Lemongrass',
+                'Galangal',
+                'Peanut sauce',
+                'Chili',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 340,
+              preparationTime: 20,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '17:00',
+          closeTime: '22:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '741 Spice Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12355',
+        country: 'USA',
+        latitude: 40.7511,
+        longitude: -73.9823,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0133',
+        email: 'info@spiceroutesatay.com',
+        website: 'https://spiceroutesatay.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'PayPal'],
+      deliveryAreas: ['Downtown', 'Eastside', 'Asia Town'],
+    ),
+    RestaurantModel(
+      id: '12',
+      name: 'The Dessert Laboratory',
+      description: 'Innovative desserts and molecular gastronomy sweets',
+      imageUrl: 'assets/images/dessert-2.webp',
+      cuisineTypes: ['Dessert', 'Modern'],
+      rating: 4.9,
+      reviewCount: 89,
+      priceRange: '\$\$\$',
+      deliveryTime: 16,
+      distance: 1.3,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 4.99,
+      minimumOrder: 25.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '12',
+          name: 'Modern Desserts',
+          description: 'Innovative and artistic desserts',
+          imageUrl: 'assets/images/dessert.webp',
+          items: [
+            MenuItemModel(
+              id: '12',
+              name: 'Deconstructed Tiramisu',
+              description:
+                  'Modern interpretation of classic tiramisu with coffee caviar',
+              price: 12.99,
+              imageUrl: 'assets/images/dessert-2.webp',
+              category: 'Desserts',
+              ingredients: [
+                'Mascarpone',
+                'Coffee caviar',
+                'Ladyfinger crumbs',
+                'Cocoa dust',
+              ],
+              isVegetarian: true,
+              isVegan: false,
+              calories: 295,
+              preparationTime: 12,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '14:00',
+          closeTime: '22:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '963 Innovation Avenue',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12356',
+        country: 'USA',
+        latitude: 40.7367,
+        longitude: -73.9912,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0134',
+        email: 'info@dessertlab.com',
+        website: 'https://dessertlab.com',
+      ),
+      paymentMethods: ['Credit Card', 'Apple Pay', 'Google Pay'],
+      deliveryAreas: ['Downtown', 'Midtown', 'Arts District'],
+    ),
+    RestaurantModel(
+      id: '13',
+      name: 'Pizzeria Napoli',
+      description: 'Family-owned pizzeria serving classic Italian recipes',
+      imageUrl: 'assets/images/pizza-3.webp',
+      cuisineTypes: ['Italian', 'Pizza', 'Family'],
+      rating: 4.4,
+      reviewCount: 267,
+      priceRange: '\$\$',
+      deliveryTime: 26,
+      distance: 3.4,
+      isOpen: false,
+      acceptingOrders: false,
+      deliveryFee: 2.99,
+      minimumOrder: 16.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '13',
+          name: 'Traditional Pizza',
+          description: 'Classic Italian pizza recipes',
+          imageUrl: 'assets/images/pizza.webp',
+          items: [
+            MenuItemModel(
+              id: '13',
+              name: 'Pepperoni Pizza',
+              description: 'Classic pepperoni pizza with mozzarella cheese',
+              price: 16.99,
+              imageUrl: 'assets/images/pizza-3.webp',
+              category: 'Pizza',
+              ingredients: [
+                'Pepperoni',
+                'Mozzarella',
+                'Tomato sauce',
+                'Pizza dough',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 350,
+              preparationTime: 18,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '21:00',
+          isClosed: true,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '258 Napoli Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12357',
+        country: 'USA',
+        latitude: 40.7682,
+        longitude: -73.9567,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0135',
+        email: 'info@napoli.com',
+        website: 'https://napoli.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card'],
+      deliveryAreas: ['Uptown', 'Little Italy'],
+    ),
+    RestaurantModel(
+      id: '14',
+      name: 'Burger Station',
+      description: 'Classic American diner with homestyle burgers',
+      imageUrl: 'assets/images/burger-3.webp',
+      cuisineTypes: ['American', 'Burger', 'Diner'],
+      rating: 4.3,
+      reviewCount: 198,
+      priceRange: '\$',
+      deliveryTime: 17,
+      distance: 1.9,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 1.99,
+      minimumOrder: 10.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '14',
+          name: 'Diner Burgers',
+          description: 'Classic diner-style burgers',
+          imageUrl: 'assets/images/burger.webp',
+          items: [
+            MenuItemModel(
+              id: '14',
+              name: 'Double Bacon Burger',
+              description:
+                  'Double beef patty with crispy bacon and cheddar cheese',
+              price: 11.99,
+              imageUrl: 'assets/images/burger-3.webp',
+              category: 'Burgers',
+              ingredients: [
+                'Beef patties',
+                'Bacon',
+                'Cheddar cheese',
+                'Lettuce',
+                'Tomato',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 620,
+              preparationTime: 14,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '06:00',
+          closeTime: '24:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '147 Diner Road',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12358',
+        country: 'USA',
+        latitude: 40.7445,
+        longitude: -73.9878,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0136',
+        email: 'info@burgerstation.com',
+        website: 'https://burgerstation.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Debit Card'],
+      deliveryAreas: ['Downtown', 'Eastside', 'Westside'],
+    ),
+    RestaurantModel(
+      id: '15',
+      name: 'Wings & Things',
+      description: 'Buffalo wings and comfort food favorites',
+      imageUrl: 'assets/images/chicken-3.webp',
+      cuisineTypes: ['American', 'Chicken', 'Wings'],
+      rating: 4.2,
+      reviewCount: 312,
+      priceRange: '\$\$',
+      deliveryTime: 21,
+      distance: 2.5,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.49,
+      minimumOrder: 12.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '15',
+          name: 'Wings',
+          description: 'Buffalo wings and variations',
+          imageUrl: 'assets/images/chicken.webp',
+          items: [
+            MenuItemModel(
+              id: '15',
+              name: 'Buffalo Wings',
+              description:
+                  'Classic buffalo wings with blue cheese dip (12 wings)',
+              price: 13.99,
+              imageUrl: 'assets/images/chicken-3.webp',
+              category: 'Chicken',
+              ingredients: [
+                'Chicken wings',
+                'Buffalo sauce',
+                'Blue cheese',
+                'Celery',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 410,
+              preparationTime: 16,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '11:00',
+          closeTime: '23:30',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '369 Wings Boulevard',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12359',
+        country: 'USA',
+        latitude: 40.7556,
+        longitude: -73.9798,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0137',
+        email: 'info@wingsandthings.com',
+        website: 'https://wingsandthings.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Apple Pay'],
+      deliveryAreas: ['Downtown', 'Sports District', 'University Area'],
+    ),
+    RestaurantModel(
+      id: '16',
+      name: 'Taco Libre',
+      description: 'Street-style tacos and Mexican street food',
+      imageUrl: 'assets/images/taco-3.webp',
+      cuisineTypes: ['Mexican', 'Street Food', 'Tacos'],
+      rating: 4.6,
+      reviewCount: 423,
+      priceRange: '\$',
+      deliveryTime: 14,
+      distance: 1.1,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 1.49,
+      minimumOrder: 9.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '16',
+          name: 'Street Tacos',
+          description: 'Authentic Mexican street tacos',
+          imageUrl: 'assets/images/tacos.webp',
+          items: [
+            MenuItemModel(
+              id: '16',
+              name: 'Al Pastor Tacos',
+              description: 'Marinated pork with pineapple and onions (4 tacos)',
+              price: 8.99,
+              imageUrl: 'assets/images/taco-3.webp',
+              category: 'Tacos',
+              ingredients: [
+                'Pork al pastor',
+                'Pineapple',
+                'Onions',
+                'Cilantro',
+                'Lime',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 280,
+              preparationTime: 10,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '10:00',
+          closeTime: '23:00',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '852 Street Food Lane',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12360',
+        country: 'USA',
+        latitude: 40.7389,
+        longitude: -73.9923,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0138',
+        email: 'info@tacolibre.com',
+        website: 'https://tacolibre.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'Venmo', 'Zelle'],
+      deliveryAreas: ['Downtown', 'Eastside', 'Street Food District'],
+    ),
+    RestaurantModel(
+      id: '17',
+      name: 'Satay Kingdom',
+      description: 'Traditional Indonesian satay house with family recipes',
+      imageUrl: 'assets/images/satay-3.webp',
+      cuisineTypes: ['Indonesian', 'Traditional', 'Asian'],
+      rating: 4.7,
+      reviewCount: 156,
+      priceRange: '\$\$',
+      deliveryTime: 23,
+      distance: 2.8,
+      isOpen: true,
+      acceptingOrders: true,
+      deliveryFee: 2.99,
+      minimumOrder: 15.00,
+      menuCategories: [
+        MenuCategoryModel(
+          id: '17',
+          name: 'Traditional Satay',
+          description: 'Family recipe satay from Indonesia',
+          imageUrl: 'assets/images/satay.webp',
+          items: [
+            MenuItemModel(
+              id: '17',
+              name: 'Mixed Satay Platter',
+              description:
+                  'Combination of chicken, beef, and lamb satay (12 skewers)',
+              price: 22.99,
+              imageUrl: 'assets/images/satay-3.webp',
+              category: 'Satay',
+              ingredients: [
+                'Chicken',
+                'Beef',
+                'Lamb',
+                'Traditional spices',
+                'Peanut sauce',
+              ],
+              isVegetarian: false,
+              isVegan: false,
+              calories: 450,
+              preparationTime: 25,
+              isAvailable: true,
+            ),
+          ],
+        ),
+      ],
+      operatingHours: [
+        OperatingHoursModel(
+          dayOfWeek: 'Monday',
+          openTime: '17:30',
+          closeTime: '22:30',
+          isClosed: false,
+        ),
+      ],
+      location: RestaurantLocationModel(
+        address: '741 Kingdom Street',
+        city: 'Food City',
+        state: 'FC',
+        zipCode: '12361',
+        country: 'USA',
+        latitude: 40.7612,
+        longitude: -73.9689,
+      ),
+      contact: RestaurantContactModel(
+        phone: '+1-555-0139',
+        email: 'info@sataykingdom.com',
+        website: 'https://sataykingdom.com',
+      ),
+      paymentMethods: ['Cash', 'Credit Card', 'PayPal'],
+      deliveryAreas: ['Downtown', 'Indonesia Town', 'Eastside'],
+    ),
+  ];
+}
