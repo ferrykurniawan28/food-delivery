@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fooddelivery/core/themes/app_theme.dart';
 import '../../domain/entities/cart_item.dart';
 import '../bloc/bloc.dart';
 
@@ -66,10 +67,10 @@ class CartItemTile extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   '\$${item.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+                    color: AppTheme.lightTheme.primaryColor,
                   ),
                 ),
               ],

@@ -54,7 +54,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
           IconButton(
             icon: Icon(Icons.shopping_cart_rounded),
             onPressed: () {
-              // Handle cart icon press
+              Modular.to.pushNamed('/cart');
             },
           ),
         ],
