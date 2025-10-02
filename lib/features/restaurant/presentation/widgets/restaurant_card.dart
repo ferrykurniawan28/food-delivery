@@ -9,12 +9,13 @@ class RestaurantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         Modular.to.pushNamed('/restaurant/${restaurant.id}');
       },
       child: Container(
         height: 110,
+        width: double.infinity,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -145,6 +145,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
               ),
             ),
             Divider(height: 1, color: Color(0xFFE53935).withOpacity(0.3)),
+            const SizedBox(height: 8),
             // BLoC Consumer for restaurant list
             BlocBuilder<RestaurantBloc, RestaurantState>(
               bloc: _restaurantBloc,

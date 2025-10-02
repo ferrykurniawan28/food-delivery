@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:fooddelivery/core/themes/app_theme.dart';
+import '../../../cart/domain/entities/cart_item.dart';
+import '../../../cart/presentation/bloc/bloc.dart';
 import '../bloc/bloc.dart';
 import '../../domain/entities/entities.dart';
 
@@ -37,7 +40,12 @@ class _RestaurantPageState extends State<RestaurantPage> {
             if (state is RestaurantLoading) {
               return const _LoadingView();
             } else if (state is RestaurantDetailsLoaded) {
-              return _RestaurantDetailView(restaurant: state.restaurant);
+              return Stack(
+                children: [
+                  _RestaurantDetailView(restaurant: state.restaurant),
+                  _CartBottomNavBar(restaurant: state.restaurant),
+                ],
+              );
             } else if (state is RestaurantError) {
               return _ErrorView(
                 message: state.message,
@@ -77,7 +85,7 @@ class _RestaurantDetailView extends StatelessWidget {
               _RestaurantInfo(restaurant: restaurant),
               _MenuSection(restaurant: restaurant),
               _LocationSection(restaurant: restaurant),
-              const SizedBox(height: 20),
+              const SizedBox(height: 100), // Extra space for bottom nav bar
             ],
           ),
         ),
@@ -240,7 +248,11 @@ class _RestaurantHeader extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.star, color: Colors.orange, size: 20),
+              Icon(
+                Icons.star,
+                color: AppTheme.lightTheme.primaryColor,
+                size: 20,
+              ),
               const SizedBox(width: 4),
               Text(
                 restaurant.rating.toString(),
@@ -452,7 +464,8 @@ class _MenuSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ...restaurant.menuCategories.map(
-            (category) => _MenuCategoryCard(category: category),
+            (category) =>
+                _MenuCategoryCard(category: category, restaurant: restaurant),
           ),
         ],
       ),
@@ -462,8 +475,9 @@ class _MenuSection extends StatelessWidget {
 
 class _MenuCategoryCard extends StatefulWidget {
   final MenuCategory category;
+  final Restaurant restaurant;
 
-  const _MenuCategoryCard({required this.category});
+  const _MenuCategoryCard({required this.category, required this.restaurant});
 
   @override
   State<_MenuCategoryCard> createState() => _MenuCategoryCardState();
@@ -558,7 +572,10 @@ class _MenuCategoryCardState extends State<_MenuCategoryCard> {
             ),
           ),
           if (_isExpanded)
-            ...widget.category.items.map((item) => _MenuItemTile(item: item)),
+            ...widget.category.items.map(
+              (item) =>
+                  _MenuItemTile(item: item, restaurant: widget.restaurant),
+            ),
         ],
       ),
     );
@@ -567,8 +584,9 @@ class _MenuCategoryCardState extends State<_MenuCategoryCard> {
 
 class _MenuItemTile extends StatelessWidget {
   final MenuItem item;
+  final Restaurant restaurant;
 
-  const _MenuItemTile({required this.item});
+  const _MenuItemTile({required this.item, required this.restaurant});
 
   @override
   Widget build(BuildContext context) {
@@ -663,31 +681,159 @@ class _MenuItemTile extends StatelessWidget {
                     'Ingredients: ${item.ingredients.join(', ')}',
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
-                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: item.isAvailable
-                        ? () {
-                            // TODO: Add to cart functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${item.name} added to cart'),
-                                duration: const Duration(seconds: 2),
-                              ),
+                  child: BlocBuilder<CartBloc, CartState>(
+                    builder: (context, state) {
+                      // Find if this item is already in cart
+                      int currentQuantity = 0;
+                      String? cartItemId;
+
+                      if (state is CartLoaded) {
+                        // Find cart item safely
+                        try {
+                          final cartItem = state.cart.items.firstWhere(
+                            (cartItem) => cartItem.menuItemId == item.id,
+                          );
+                          currentQuantity = cartItem.quantity;
+                          cartItemId = cartItem.id;
+                        } catch (e) {
+                          // Item not found in cart, keep defaults
+                          currentQuantity = 0;
+                          cartItemId = null;
+                        }
+                      }
+
+                      if (!item.isAvailable) {
+                        return ElevatedButton(
+                          onPressed: null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Not Available'),
+                        );
+                      }
+
+                      if (currentQuantity == 0) {
+                        // Show "Add to Cart" button
+                        return ElevatedButton(
+                          onPressed: () {
+                            // Create cart item
+                            final cartItem = CartItem(
+                              id: DateTime.now().millisecondsSinceEpoch
+                                  .toString(),
+                              menuItemId: item.id,
+                              name: item.name,
+                              description: item.description,
+                              price: item.price,
+                              imageUrl: item.imageUrl,
+                              quantity: 1,
+                              restaurantId: restaurant.id,
+                              restaurantName: restaurant.name,
+                              ingredients: item.ingredients,
+                              category: item.category,
+                              isVegetarian: item.isVegetarian,
+                              isVegan: item.isVegan,
+                              calories: item.calories.round(),
+                              preparationTime: item.preparationTime,
                             );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      item.isAvailable ? 'Add to Cart' : 'Not Available',
-                    ),
+
+                            // Add to cart using BLoC
+                            BlocProvider.of<CartBloc>(
+                              context,
+                            ).add(AddItemToCartEvent(cartItem));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.lightTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Add to Cart'),
+                        );
+                      } else {
+                        // Show quantity controls
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.lightTheme.primaryColor,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Decrease button
+                              IconButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      AppTheme.lightTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (currentQuantity > 1) {
+                                    BlocProvider.of<CartBloc>(context).add(
+                                      UpdateItemQuantityEvent(
+                                        cartItemId!,
+                                        currentQuantity - 1,
+                                      ),
+                                    );
+                                  } else {
+                                    BlocProvider.of<CartBloc>(
+                                      context,
+                                    ).add(RemoveItemFromCartEvent(cartItemId!));
+                                  }
+                                },
+                                icon: const Icon(Icons.remove),
+                              ),
+                              // Quantity display
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  currentQuantity.toString(),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: AppTheme.lightTheme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                              // Increase button
+                              IconButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      AppTheme.lightTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  BlocProvider.of<CartBloc>(context).add(
+                                    UpdateItemQuantityEvent(
+                                      cartItemId!,
+                                      currentQuantity + 1,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.add),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
               ],
@@ -860,6 +1006,178 @@ class _NotFoundView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CartBottomNavBar extends StatelessWidget {
+  final Restaurant restaurant;
+
+  const _CartBottomNavBar({required this.restaurant});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, state) {
+        if (state is! CartLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        // Filter cart items for this restaurant only
+        final restaurantItems = state.cart.items
+            .where((item) => item.restaurantId == restaurant.id)
+            .toList();
+
+        if (restaurantItems.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Calculate totals for this restaurant
+        final totalItems = restaurantItems.fold<int>(
+          0,
+          (sum, item) => sum + item.quantity,
+        );
+        final totalValue = restaurantItems.fold<double>(
+          0.0,
+          (sum, item) => sum + (item.price * item.quantity),
+        );
+
+        return Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.lightTheme.primaryColor,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.pushNamed(context, '/cart');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      // Cart icon with item count
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Stack(
+                          children: [
+                            const Icon(
+                              Icons.shopping_cart,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            if (totalItems > 0)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    totalItems > 99
+                                        ? '99+'
+                                        : totalItems.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Cart summary
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$totalItems ${totalItems == 1 ? 'item' : 'items'} in cart',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'From ${restaurant.name}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Total value
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '\$${totalValue.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'View Cart',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

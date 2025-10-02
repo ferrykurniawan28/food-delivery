@@ -39,10 +39,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FadeTransition(opacity: _fadeAnimation, child: RouterOutlet()),
-      bottomNavigationBar: EnhancedBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-      ),
+      // bottomNavigationBar: EnhancedBottomNavBar(
+      //   currentIndex: _currentIndex,
+      //   onTap: _onTabTapped,
+      // ),
     );
   }
 
