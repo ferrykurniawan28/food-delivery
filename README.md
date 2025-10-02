@@ -22,6 +22,7 @@ A modern Flutter food delivery application built with clean architecture, BLoC s
 
 ### 🏠 Home & Restaurant Discovery
 - Browse restaurants by categories (Popular, Pizza, Burger, Chicken, Tacos)
+- Browse restaurant by name
 - Search functionality for restaurants and dishes
 - Restaurant cards with ratings, delivery time, and distance
 
@@ -46,7 +47,6 @@ A modern Flutter food delivery application built with clean architecture, BLoC s
 
 ### 👤 User Profile
 - User account management
-- Order history
 - Settings and preferences
 
 ## 🏗️ Architecture
@@ -208,9 +208,9 @@ flutter test test/integration/
 
 ### App Theme
 The app uses a custom theme defined in `lib/core/themes/app_theme.dart` with:
-- Primary color: Orange (#FF5722)
+- Primary color: Red (#0E53935)
 - Material Design 3 principles
-- Custom typography and color scheme
+- Custom color scheme
 
 ### Routing
 Navigation is handled by Flutter Modular with route definitions in `lib/routes/routes.dart`:
@@ -242,21 +242,10 @@ The app uses **BLoC (Business Logic Component)** pattern for state management:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 👨‍💻 Author
 
 **Ferry Kurniawan**
 - GitHub: [@ferrykurniawan28](https://github.com/ferrykurniawan28)
-
-## 🙏 Acknowledgments
-
-- Flutter team for the amazing framework
-- BLoC library contributors
-- Material Design for UI inspiration
-- All open source contributors
 
 ---
 

@@ -9,13 +9,13 @@ class ErrorHandlingWidget extends StatelessWidget {
   final bool showDetails;
 
   const ErrorHandlingWidget({
-    Key? key,
+    super.key,
     required this.error,
     this.onRetry,
     this.title,
     this.icon,
     this.showDetails = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
