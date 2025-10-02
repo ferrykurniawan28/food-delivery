@@ -39,10 +39,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FadeTransition(opacity: _fadeAnimation, child: RouterOutlet()),
-      // bottomNavigationBar: EnhancedBottomNavBar(
-      //   currentIndex: _currentIndex,
-      //   onTap: _onTabTapped,
-      // ),
+      bottomNavigationBar: EnhancedBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+      ),
     );
   }
 
@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         Modular.to.navigate('/home/orders');
         break;
       case 2:
-        Modular.to.navigate('/home/profile');
+        Modular.to.navigate('/home/account');
         break;
     }
   }

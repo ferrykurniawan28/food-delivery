@@ -7,6 +7,8 @@ import 'package:fooddelivery/features/restaurant/presentation/bloc/restaurant_ev
 import 'package:fooddelivery/features/restaurant/presentation/bloc/restaurant_state.dart';
 import 'package:fooddelivery/features/restaurant/presentation/widgets/restaurant_card.dart';
 
+import '../../../cart/presentation/bloc/bloc.dart';
+
 class RestaurantListPage extends StatefulWidget {
   const RestaurantListPage({super.key});
 
@@ -14,7 +16,8 @@ class RestaurantListPage extends StatefulWidget {
   State<RestaurantListPage> createState() => _RestaurantListPageState();
 }
 
-class _RestaurantListPageState extends State<RestaurantListPage> {
+class _RestaurantListPageState extends State<RestaurantListPage>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
   List<Map<String, String>> tabs = [
     {'Popular': 'assets/images/recomendation.webp'},
@@ -25,14 +28,32 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   ];
 
   late RestaurantBloc _restaurantBloc;
+  late CartBloc _cartBloc;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _restaurantBloc = Modular.get<RestaurantBloc>();
+    _cartBloc = Modular.get<CartBloc>();
+
     // Load restaurants for the initial category (Popular)
     _loadRestaurantsByCategory(tabs[0].keys.first);
+
+    // Load cart to ensure we have the latest state - check if bloc is not closed
+    if (!_cartBloc.isClosed) {
+      _cartBloc.add(LoadCartEvent());
+    }
   }
+
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   super.didChangeAppLifecycleState(state);
+  //   if (state == AppLifecycleState.resumed) {
+  //     // Refresh cart when app becomes active (e.g., returning from another page)
+  //     _cartBloc.add(LoadCartEvent());
+  //   }
+  // }
 
   void _loadRestaurantsByCategory(String category) {
     _restaurantBloc.add(LoadRestaurantsByCategoryEvent(category));
@@ -40,6 +61,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
   @override
   void dispose() {
+    // WidgetsBinding.instance.removeObserver(this);
     // _restaurantBloc.close();
     super.dispose();
   }
@@ -51,10 +73,52 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         title: Text('Delivering to Main Street 123'),
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_cart_rounded),
-            onPressed: () {
-              Modular.to.pushNamed('/cart');
+          BlocBuilder<CartBloc, CartState>(
+            bloc: _cartBloc,
+            builder: (context, state) {
+              print('Cart state: $state'); // Debug print
+              print('State type: ${state.runtimeType}'); // Debug print
+
+              if (state is CartLoaded) {
+                print(
+                  'Cart has ${state.cart.items.length} items',
+                ); // Debug print
+                print('Cart items: ${state.cart.items}'); // Debug print
+              }
+
+              // Always show the cart icon in a Stack so we can add badge when needed
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart_rounded),
+                    onPressed: () {
+                      Modular.to.pushNamed('/cart');
+                    },
+                  ),
+                  // Show badge only when there are items
+                  if (state is CartLoaded && state.cart.items.isNotEmpty)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '${state.cart.items.length}',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
           ),
         ],

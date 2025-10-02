@@ -4,6 +4,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:fooddelivery/core/themes/app_theme.dart';
 import '../../../cart/domain/entities/cart_item.dart';
 import '../../../cart/presentation/bloc/bloc.dart';
+import '../../../order/presentation/pages/checkout_page.dart';
+import '../../../order/presentation/blocs/order_bloc.dart';
 import '../bloc/bloc.dart';
 import '../../domain/entities/entities.dart';
 
@@ -82,10 +84,10 @@ class _RestaurantDetailView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _RestaurantHeader(restaurant: restaurant),
-              _RestaurantInfo(restaurant: restaurant),
               _MenuSection(restaurant: restaurant),
+              _RestaurantInfo(restaurant: restaurant),
               _LocationSection(restaurant: restaurant),
-              const SizedBox(height: 100), // Extra space for bottom nav bar
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -1064,7 +1066,18 @@ class _CartBottomNavBar extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  Navigator.pushNamed(context, '/cart');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: Modular.get<CartBloc>()),
+                          BlocProvider(create: (context) => OrderBloc()),
+                        ],
+                        child: CheckoutPage(restaurant: restaurant),
+                      ),
+                    ),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -1156,7 +1169,7 @@ class _CartBottomNavBar extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'View Cart',
+                            'Checkout',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 12,

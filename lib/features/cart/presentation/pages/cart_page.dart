@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:fooddelivery/core/themes/app_theme.dart';
 import '../bloc/bloc.dart';
 import '../widgets/widgets.dart';
@@ -34,21 +35,28 @@ class CartPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<CartBloc>().add(LoadCartEvent());
+                      final cartBloc = BlocProvider.of<CartBloc>(context);
+                      if (!cartBloc.isClosed) {
+                        cartBloc.add(LoadCartEvent());
+                      }
                     },
                     child: const Text('Retry'),
                   ),
                 ],
               ),
             );
+          } else if (state is CartEmpty) {
+            return _buildEmptyCart(context);
           } else if (state is CartLoaded) {
+            print('Cart has ${state.cart.items.length} items');
             if (state.cart.items.isEmpty) {
               return _buildEmptyCart(context);
             }
             return _buildCartContent(context, state.cart);
           }
 
-          return const SizedBox.shrink();
+          // Default case - show empty cart for initial state
+          return _buildEmptyCart(context);
         },
       ),
     );
@@ -125,43 +133,52 @@ class CartPage extends StatelessWidget {
               final restaurantName = restaurantEntry.key;
               final items = restaurantEntry.value;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.restaurant,
-                            color: AppTheme.lightTheme.primaryColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            restaurantName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to restaurant details page
+                  // Assuming you have a route set up for restaurant details
+                  Modular.to.pushNamed(
+                    '/restaurant/${items.first.restaurantId}',
+                  );
+                },
+                child: Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.restaurant,
+                              color: AppTheme.lightTheme.primaryColor,
+                              size: 20,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              restaurantName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Divider(height: 1),
-                    ...items.map((item) => CartItemTile(item: item)),
-                  ],
+                      const Divider(height: 1),
+                      ...items.map((item) => CartItemTile(item: item)),
+                    ],
+                  ),
                 ),
               );
             },
           ),
         ),
-        CartSummary(cart: cart),
+        // CartSummary(cart: cart),
       ],
     );
   }

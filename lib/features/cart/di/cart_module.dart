@@ -37,8 +37,8 @@ class CartModule extends Module {
       () => GetCartItemCountUseCase(repository: i.get<CartRepository>()),
     );
 
-    // BLoC
-    i.add<CartBloc>(
+    // BLoC - Use singleton to maintain state across navigation
+    i.addSingleton<CartBloc>(
       () => CartBloc(
         getCartUseCase: i.get<GetCartUseCase>(),
         addItemToCartUseCase: i.get<AddItemToCartUseCase>(),
