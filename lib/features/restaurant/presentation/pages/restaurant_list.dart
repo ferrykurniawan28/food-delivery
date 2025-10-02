@@ -5,6 +5,7 @@ import 'package:fooddelivery/core/themes/app_theme.dart';
 import 'package:fooddelivery/features/restaurant/presentation/bloc/restaurant_bloc.dart';
 import 'package:fooddelivery/features/restaurant/presentation/bloc/restaurant_event.dart';
 import 'package:fooddelivery/features/restaurant/presentation/bloc/restaurant_state.dart';
+import 'package:fooddelivery/features/restaurant/presentation/widgets/restaurant_card.dart';
 
 class RestaurantListPage extends StatefulWidget {
   const RestaurantListPage({super.key});
@@ -49,6 +50,14 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       appBar: AppBar(
         title: Text('Delivering to Main Street 123'),
         scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart_rounded),
+            onPressed: () {
+              // Handle cart icon press
+            },
+          ),
+        ],
       ),
       backgroundColor: Colors.white,
       body: RefreshIndicator(
@@ -164,16 +173,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                     itemCount: state.restaurants.length,
                     itemBuilder: (context, index) {
                       final restaurant = state.restaurants[index];
-                      return RestaurantCard(
-                        title: restaurant.name,
-                        imageUrl: restaurant.imageUrl,
-                        priceRange: restaurant.priceRange,
-                        deliveryTime: '${restaurant.deliveryTime} min',
-                        cuisine: restaurant.cuisineTypes.join(', '),
-                        rating: restaurant.rating,
-                        distance:
-                            '${restaurant.distance.toStringAsFixed(1)} km',
-                      );
+                      return RestaurantCard(restaurant: restaurant);
                     },
                   );
                 }
@@ -182,112 +182,16 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.lightTheme.primaryColor,
+                    ),
                   ),
                 );
               },
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class RestaurantCard extends StatelessWidget {
-  final String title;
-  final String imageUrl;
-  final String priceRange;
-  final String deliveryTime;
-  final String cuisine;
-  final double rating;
-  final String distance;
-  const RestaurantCard({
-    super.key,
-    required this.title,
-    required this.imageUrl,
-    required this.priceRange,
-    required this.deliveryTime,
-    required this.cuisine,
-    required this.rating,
-    required this.distance,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 110,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  children: [
-                    TextSpan(
-                      text: '$priceRange ',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '• $cuisine',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8),
-              Flexible(
-                child: RichText(
-                  text: TextSpan(
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    children: [
-                      TextSpan(
-                        text: '$rating ',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      TextSpan(
-                        text: '★',
-                        style: TextStyle(color: Colors.yellow[700]),
-                      ),
-                      TextSpan(
-                        text: ' • $deliveryTime • $priceRange',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                  overflow: TextOverflow.visible,
-                  softWrap: true,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                distance,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              imageUrl,
-              height: 110,
-              width: 110,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ],
       ),
     );
   }

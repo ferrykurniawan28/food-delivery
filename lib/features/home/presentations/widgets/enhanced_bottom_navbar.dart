@@ -127,23 +127,6 @@ class EnhancedBottomNavBar extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: isActive
-          ? BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                width: 1,
-              ),
-            )
-          : null,
       child: Icon(
         icon,
         color: isActive
