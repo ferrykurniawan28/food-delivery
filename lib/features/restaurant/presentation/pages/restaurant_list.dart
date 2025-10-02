@@ -19,6 +19,9 @@ class RestaurantListPage extends StatefulWidget {
 class _RestaurantListPageState extends State<RestaurantListPage>
     with WidgetsBindingObserver {
   int _currentIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   List<Map<String, String>> tabs = [
     {'Popular': 'assets/images/recomendation.webp'},
     {'Pizza': 'assets/images/pizza.webp'},
@@ -59,8 +62,31 @@ class _RestaurantListPageState extends State<RestaurantListPage>
     _restaurantBloc.add(LoadRestaurantsByCategoryEvent(category));
   }
 
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+
+    if (query.isEmpty) {
+      // If search is empty, load restaurants by current category
+      _loadRestaurantsByCategory(tabs[_currentIndex].keys.first);
+    } else {
+      // Search for restaurants or dishes
+      _restaurantBloc.add(SearchRestaurantsEvent(query));
+    }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+    });
+    _loadRestaurantsByCategory(tabs[_currentIndex].keys.first);
+  }
+
   @override
   void dispose() {
+    _searchController.dispose();
     // WidgetsBinding.instance.removeObserver(this);
     // _restaurantBloc.close();
     super.dispose();
@@ -126,7 +152,11 @@ class _RestaurantListPageState extends State<RestaurantListPage>
       backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: () async {
-          _loadRestaurantsByCategory(tabs[_currentIndex].keys.first);
+          if (_searchQuery.isNotEmpty) {
+            _restaurantBloc.add(SearchRestaurantsEvent(_searchQuery));
+          } else {
+            _loadRestaurantsByCategory(tabs[_currentIndex].keys.first);
+          }
         },
         child: ListView(
           // padding: const EdgeInsets.all(16.0),
@@ -139,11 +169,19 @@ class _RestaurantListPageState extends State<RestaurantListPage>
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: TextField(
+                  controller: _searchController,
                   style: TextStyle(color: Color(0xFF876363)),
+                  onChanged: _onSearchChanged,
                   decoration: InputDecoration(
                     hintText: 'Search for restaurants or dishes',
                     hintStyle: TextStyle(color: Color(0xFF876363)),
                     prefixIcon: Icon(Icons.search, color: Color(0xFF876363)),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: Color(0xFF876363)),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                       borderSide: BorderSide.none,
@@ -159,56 +197,80 @@ class _RestaurantListPageState extends State<RestaurantListPage>
                 ),
               ),
             ),
-            Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(
-                      tabs.length,
-                      (index) => Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _currentIndex = index;
-                            });
-                            // Load restaurants for selected category
-                            _loadRestaurantsByCategory(tabs[index].keys.first);
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: Column(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage: Image.asset(
-                                    tabs[index].values.first,
-                                  ).image,
-                                ),
-                                Text(
+            // Only show category tabs when not searching
+            if (_searchQuery.isEmpty) ...[
+              Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: List.generate(
+                        tabs.length,
+                        (index) => Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentIndex = index;
+                              });
+                              // Clear search when switching categories
+                              if (_searchQuery.isNotEmpty) {
+                                _clearSearch();
+                              } else {
+                                // Load restaurants for selected category
+                                _loadRestaurantsByCategory(
                                   tabs[index].keys.first,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: _currentIndex == index
-                                        ? AppTheme.lightTheme.primaryColor
-                                        : Colors.black,
-                                    fontWeight: _currentIndex == index
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Column(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundImage: Image.asset(
+                                      tabs[index].values.first,
+                                    ).image,
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    tabs[index].keys.first,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _currentIndex == index
+                                          ? AppTheme.lightTheme.primaryColor
+                                          : Colors.black,
+                                      fontWeight: _currentIndex == index
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Divider(height: 1, color: Color(0xFFE53935).withOpacity(0.3)),
+              Divider(height: 1, color: Color(0xFFE53935).withOpacity(0.3)),
+            ],
+            // Show search results info when searching
+            if (_searchQuery.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Search results for "$_searchQuery"',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             // BLoC Consumer for restaurant list
             BlocBuilder<RestaurantBloc, RestaurantState>(
